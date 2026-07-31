@@ -1,116 +1,99 @@
-# Manifest RBAC — Cursor Plugin
+# Manifest RBAC — Fortress IAM for Cursor
 
-**Manifest RBAC** is a stack-agnostic pattern for fine-grained authorization:
+Complete **backend + frontend** agent skill for manifest-driven, grant-only RBAC (Fortress-style).
 
-- **Route manifest** as source of truth (method, path → `resource:action`)
-- **Permission keys** like `task:read`, `platform_user:update`
-- **Roles + direct user grants** with optional tenant vs platform scopes
-- **Permission matrix UI** spec for role editors and API catalogs
+- Route manifest → `resource:action` permissions  
+- IAM roles, groups, direct user grants  
+- Tenant vs platform scopes  
+- Global permission guard (no role-enum bypass)  
+- Client: `/access/me`, nav/route gates, permission matrix UI  
 
-Works with **any** backend (Express, FastAPI, Django, Rails, Go, NestJS, Laravel, Spring, .NET), **any** database/ORM, and **any** frontend.
+Works with **any stack** — NestJS + SvelteKit reference in [reference.md](skills/manifest-rbac/reference.md).
 
 ---
 
 ## Install
 
-### Option A — Cursor Plugin (recommended)
+### Personal skill (all projects)
 
-**Test locally:**
+```powershell
+# Windows
+Copy-Item -Recurse -Force "skills\manifest-rbac" "$env:USERPROFILE\.cursor\skills\manifest-rbac"
+```
 
 ```bash
-# Windows (PowerShell)
-New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.cursor\plugins\local\manifest-rbac"
-Copy-Item -Recurse -Force "path\to\cursor-manifest-rbac\*" "$env:USERPROFILE\.cursor\plugins\local\manifest-rbac\"
-
 # macOS / Linux
-mkdir -p ~/.cursor/plugins/local/manifest-rbac
-cp -r /path/to/cursor-manifest-rbac/* ~/.cursor/plugins/local/manifest-rbac/
+cp -r skills/manifest-rbac ~/.cursor/skills/manifest-rbac
 ```
 
-Reload Cursor (**Developer: Reload Window**). Check **Customize** → skills.
-
-**Publish:** submit this repo at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish) (open source, manual review). Optionally list on [cursor.directory](https://cursor.directory).
-
-### Option B — Project skill (team via git)
-
-Copy into your repo:
+### Project skill (team)
 
 ```
-your-project/.cursor/skills/manifest-rbac/
+your-repo/.cursor/skills/manifest-rbac/
 ```
 
-Commit — everyone who clones gets the skill.
+Copy the `skills/manifest-rbac/` folder from this repo.
 
-### Option C — Personal global skill
+### Cursor plugin (local test)
 
-Copy `skills/manifest-rbac/` to:
+```powershell
+Copy-Item -Recurse -Force "." "$env:USERPROFILE\.cursor\plugins\local\manifest-rbac"
+```
 
-| OS | Path |
-|----|------|
-| Windows | `%USERPROFILE%\.cursor\skills\manifest-rbac\` |
-| macOS/Linux | `~/.cursor/skills/manifest-rbac/` |
+Reload Cursor → **Developer: Reload Window**.
 
 ---
 
 ## Usage
 
-In Cursor Agent chat:
-
 ```
-@manifest-rbac Add RBAC to this Express + PostgreSQL + React app
+@manifest-rbac Implement Fortress RBAC on this project (backend and frontend)
 ```
 
 ```
-/manifest-rbac Implement route manifest, roles, and GET /access/me
+@manifest-rbac Audit and remove all role-enum authorization leaks
 ```
 
-The agent reads `SKILL.md`, detects your stack, and follows the implementation checklist.
+```
+@manifest-rbac Add invoice module with manifest permissions and UI gates
+```
 
 ---
 
 ## What's inside
 
 ```
-cursor-manifest-rbac/
-├── .cursor-plugin/plugin.json
-├── skills/manifest-rbac/
-│   ├── SKILL.md        # Main workflow + checklist
-│   ├── reference.md    # Data model, APIs, algorithms
-│   ├── adapters.md     # Express, FastAPI, Django, Rails, Go, etc.
-│   └── examples.md     # Multi-stack examples
-├── README.md
-└── LICENSE
+skills/manifest-rbac/
+├── SKILL.md           # Start here — rules, checklist, invoke
+├── backend.md         # Manifest, guard, IAM, site scope, invites
+├── frontend.md        # Store, nav, gates, matrix, API gating
+├── reference.md       # Keys, APIs, data model, SiteWise paths
+├── audit-checklist.md # Grep patterns + definition of done
+├── examples.md        # Migration & greenfield scenarios
+└── adapters.md        # Express, FastAPI, Django, React, Vue…
 ```
 
 ---
 
-## Core idea
+## Core flow
 
 ```
-Route manifest  →  sync to DB  →  middleware/guard enforces resource:action
-                      ↓
-              roles + direct grants  →  GET /access/me  →  UI gates + matrix
+ROUTE_MANIFEST → sync DB → PermissionsGuard → GET /access/me → can() → UI
 ```
 
 ---
 
-## Team marketplace (Cursor Teams / Enterprise)
+## Publish
 
-1. Push this repo to GitHub
-2. **Dashboard → Plugins → Add Marketplace → Import from Repo**
-3. Assign to org groups; set Default On or Required
+Submit at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish) with this repo URL.
 
 ---
 
-## Reference implementation
+## Reference app
 
-[SiteWise](https://github.com/your-org/sitewise) (NestJS + Prisma + Svelte) — behavioral reference only. The skill tells the agent to port **logic**, not copy **files**.
+[SiteWise](https://github.com/Byiringiro215/sitewise) — production Fortress RBAC implementation.
 
 ---
-
-## Contributing
-
-PRs welcome. Keep `SKILL.md` under 500 lines; put deep detail in `reference.md` / `adapters.md`.
 
 ## License
 

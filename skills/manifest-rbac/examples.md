@@ -1,105 +1,103 @@
-# Manifest RBAC — Examples (multi-stack)
+# Manifest RBAC — Examples
 
-Same feature, different stacks. All follow the same manifest and grant logic.
+## A. Greenfield Express + React
+
+1. Add Prisma models from [reference.md](reference.md).
+2. `route-manifest.json` + sync script on `app.listen`.
+3. Middleware: `requirePermission('task','read')` reading JWT user.
+4. `GET /access/me` → `iam.getEffectiveKeys(user)`.
+5. React: `PermissionProvider` fetches `/access/me` on login.
+6. `<Can permission="task:read"><TasksLink /></Can>`.
+7. Matrix page: checkbox table bound to `POST /access/roles`.
 
 ---
 
-## Example 1: Add `stock` module (any backend)
+## B. Migrate NestJS app off `@Roles()`
 
-**manifest.json**
+1. Generate manifest from existing routes (audit script).
+2. Add `PermissionsGuard` globally; swap `@Roles()` → `@RequirePermission`.
+3. Seed IAM roles matching old enums; bind existing users on startup.
+4. Deploy backend first (guards enforce grants).
+5. Frontend: add access store + replace role checks (see [frontend.md](frontend.md)).
+6. Run [audit-checklist.md](audit-checklist.md).
 
-```json
-{ "method": "GET", "path": "/stock/items", "resource": "stock", "action": "read" },
-{ "method": "POST", "path": "/stock/items", "resource": "stock", "action": "manage" }
+---
+
+## C. Add new module "invoices"
+
+**Backend**
+
+```typescript
+// manifest
+{ method: 'GET', path: '/invoices', resource: 'invoice', action: 'read' },
+{ method: 'POST', path: '/invoices', resource: 'invoice', action: 'create' },
+
+// controller
+@RequirePermission('invoice', 'read')
+@Get()
+list() { ... }
 ```
 
-**Express:** `router.get('/stock/items', requirePermission('stock', 'read'), listItems);`
+Add `invoice:read`, `invoice:create` to supervisor template or custom roles.
 
-**FastAPI:** `Depends(require_permission("stock", "read"))`
+**Frontend**
 
-**Django:** `HasManifestPermission("stock", "read")`
+```typescript
+// nav.ts
+'/invoices': 'invoice:read',
 
-**Rails:** `require_permission "stock", "read"`
-
-**Go:** `p.Require("stock", "read", listItems)`
-
-Add `stock:read` to default staff role. Gate client nav with `can('stock:read')`.
-
----
-
-## Example 2: React permission gate
-
-```tsx
-export const useCan = (key: string) =>
-  permissionGranted(useContext(PermissionsContext), key);
-
-function ApproveButton() {
-  if (!useCan('wage:update')) return null;
-  return <button>Approve</button>;
-}
-```
-
-Load keys after login: `fetch('/access/me')`.
-
----
-
-## Example 3: Permission matrix (React — behavioral)
-
-Table with scope tabs, search, checkboxes on assignable rows, footer `{selected} of {assignable} grants selected`. See [reference.md](reference.md) for full spec.
-
----
-
-## Example 4: Direct user grant API
-
-```http
-PUT /access/users/usr_123/permissions
-{ "permissions": ["wage:update", "report:read"] }
-```
-
-Response includes `direct`, `inherited`, `effective`, `read_only`.
-
----
-
-## Example 5: Django sync command
-
-```python
-# python manage.py iam_sync
-for perm in unique_permissions(manifest):
-    IamPermission.objects.update_or_create(
-        resource=perm["resource"], action=perm["action"],
-        defaults={"effect": "ALLOW"},
-    )
+// page
+permissionSpecForPath auto-gates via ROUTE_PERMISSIONS
 ```
 
 ---
 
-## Example 6: MVP (minimal, any stack)
+## D. Platform admin activity feed (cross-tenant)
 
-```
-iam/manifest.json
-iam/service.*
-auth/middleware.*
-access/routes.*
-client/permissions.*
+Backend: map tenant permission to platform grant:
+
+```typescript
+TENANT_TO_PLATFORM_RESOURCE.attendance = 'platform_overview';
 ```
 
-Skip platform scope, groups, matrix UI. Seed one admin role with `*`.
+Platform admin passes guard for `GET /fingerprint/scans` via `platform_overview:read`.
+
+Frontend: `/admin/activity` gated by `platform_overview:read` only.
 
 ---
 
-## Example 7: Agent prompt
+## E. Tenant invite with IAM role
 
-```
-@manifest-rbac
-
-This is an Express + PostgreSQL + React project. Implement Manifest RBAC:
-1. Detect existing JWT auth and adapt the guard chain
-2. Add iam_* migrations
-3. Create config/iam_manifest.json from existing routes
-4. Add requirePermission middleware
-5. GET /access/me and GET /access/permissions
-6. React PermissionMatrix + useCan hook
-7. Use this stack's patterns only — do not introduce other frameworks
+```typescript
+await api.inviteUser({
+  name, email,
+  roleId: selectedRole.id,  // not role: 'supervisor'
+  siteIds: [...],
+});
 ```
 
-Follow SKILL.md and [adapters.md](adapters.md).
+UI loads roles only when `can('role:manage')`.
+
+---
+
+## F. Readonly API catalog page
+
+```svelte
+<FortressPermissionMatrix
+  readonly
+  scope="all"
+  catalogApi="platform"
+  showScopeFilter
+  showRoutes
+  showExempt
+/>
+```
+
+No checkboxes — reference for admins only.
+
+---
+
+## G. Mock / offline frontend
+
+Mock adapter implements `getMyPermissions(userId)` from role bindings table — same keys as production.  
+Never hardcode `if (user.role === 'owner') return ALL_PERMISSIONS`.

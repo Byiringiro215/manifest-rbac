@@ -1,8 +1,8 @@
 {
   "name": "manifest-rbac",
-  "displayName": "Manifest RBAC",
-  "description": "Stack-agnostic IAM: route manifest sync, resource:action permission keys, roles, direct user grants, tenant vs platform scopes, and permission matrix UI.",
-  "version": "1.0.0",
+  "displayName": "Manifest RBAC (Fortress IAM)",
+  "description": "Complete backend + frontend Fortress-style RBAC: route manifest, resource:action grants, IAM roles, permission guard, /access/me, nav gates, and permission matrix UI. Stack-agnostic.",
+  "version": "2.0.0",
   "license": "MIT",
-  "keywords": ["rbac", "iam", "permissions", "access-control", "authorization", "manifest"]
+  "keywords": ["rbac", "iam", "fortress", "permissions", "access-control", "authorization", "manifest", "frontend", "backend"]
 }
